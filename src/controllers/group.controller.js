@@ -241,5 +241,30 @@ const addgroupExpense = asyncHandler(async (req, res) => {
         throw new apiError(500, 'Error occurred while adding new expenses');
     }
 });
+const fetchNetAmountYouGive = asyncHandler(async (req, res) => {
+    const { to } = req.body;
+    const user_id = req.user._id;
+
+    const netAmount = await NetAmount.findOne({ from: user_id, to });
+
+    if (!netAmount) {
+        return res.status(200).json(new apiResponse(200, {}, 'No transaction happened'));
+    }
+
+    return res.status(200).json(new apiResponse(200, netAmount, 'Fetched successfully'));
+});
+const fetchNetAmountYouGot = asyncHandler(async (req, res) => {
+    const { from } = req.body;
+    const user_id = req.user._id;
+
+    const netAmount = await NetAmount.findOne({ from, to: user_id });
+
+    if (!netAmount) {
+        return res.status(200).json(new apiResponse(200, {}, 'No transaction happened'));
+    }
+
+    return res.status(200).json(new apiResponse(200, netAmount, 'Fetched successfully'));
+});
+
 
 export { createGroup, addMembertogroup, fetchUserGroup };
