@@ -24,17 +24,17 @@ const generateAccessAndRefereshTokens = async (userId) => {
 
 
 const RegisterUser = asyncHandler(async (req, res) => {
-    const { username, fullName, email, password } = req.body 
-if (!username || !fullName || !email || !password) {
+    const { username, fullName, email, password } = req.body
+    if (!username || !fullName || !email || !password) {
         throw new apiError(400, 'All Fields are required !!')
     }
     const existedUser = await User.findOne(
         {
-        $or: [{ username }, { email }]
+            $or: [{ username }, { email }]
         }
     )
     if (existedUser) {
-        throw new apiError(409,  'User with email or Username already exist !!')
+        throw new apiError(409, 'User with email or Username already exist !!')
     }
     let avatarLocalPath = req.file?.path
     if (!avatarLocalPath) {
@@ -269,6 +269,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
     res.status(200).json(new apiResponse(200, updatedUser, 'Password updated !!'))
 })
 
+const fetchUsers = asyncHandler(async (req, res) => {
+    const users = await User.find()
+    if (!users) {
+        throw apiError(500, 'Some error occured in fetching users !!')
+    }
+    res.status(200).json(new apiResponse(200, users, 'Users fetched !!'))
+})
 
 export {
     RegisterUser,
@@ -279,5 +286,6 @@ export {
     updateUserAvatar,
     changeUserPassword,
     generateOtp,
-    forgotPassword
+    forgotPassword,
+    fetchUsers
 }
