@@ -3,10 +3,11 @@ import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { UserGroup } from "../models/UserAndGroup.model.js";
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { GroupExpense } from "../models/groupExpense.model.js";
 import { Friend } from '../models/friend.model.js'
 import { User } from "../models/user.model.js";
+import { NetAmount } from "../models/netAmount.model.js";
 const createGroup = asyncHandler(async (req, res) => {
     const { groupName, members } = req.body;
 
@@ -73,7 +74,7 @@ const addMembertogroup = asyncHandler(async (req, res) => {
     try {
         // Get the current members of the group
         const members = group.members;
-        
+
         // Find all friendships involving the user
         const friendships = await Friend.find({ $or: [{ user1: user_id }, { user2: user_id }] }).session(session);
 
@@ -143,9 +144,90 @@ const addMembertogroup = asyncHandler(async (req, res) => {
         session.endSession();
 
         // Forward the error to the error handling middleware
-        throw error;
+        throw new apiError(500, 'Failed !!')
     }
 });
 
+const addgroupExpense = asyncHandler(async (req, res) => {
+    const { group_id, moneyToMembers, paidby } = req.body
+    if (!group_id || !mongoose.isValidObjectId() || !moneyToMembers || !isArray(moneyToMembers) || !paidby || !isValidObjectId(paidby)) {
+        throw new apiError(401, 'Send the group id and money to members correctly , moneytoMembers should be a array')
+    }
+    const session = await mongoose.startSession();
+    if (!session) {
+        throw new apiError(401, 'Try again failed to addExpense !! Error while creating a session for transaction !!')
+    }
+    session.startTransaction();
+    const group = await Group.findById(group_id).session(session)
+    if (!group) {
+        await session.abortTransaction();
+        session.endSession();
+        throw new apiError(404, 'No group found with this id');
+    }
+    const paidByUser = await User.findById(paidby).session(session)
+    if (!user) {
+        await session.abortTransaction()
+        session.endSession()
+        throw new apiError(404, 'No user found that is paying !!')
+    }
+    const members = group.members
+    try {
+        moneyToMembers.forEach(async (mem) => {
+            const id = mem._id
+            const amount = mem.amount
+            const newEntry = await GroupExpense.create({
+                from: paidby,
+                to: id,
+                group: group_id,
+                amount
+            }).session(session)
+            if (!newEntry) {
+                await session.abortTransaction()
+                session.endSession()
+                throw new apiError(500, 'Error occured while adding expense. Try again !!')
+            }
+            const netamount = await NetAmount.findOne({
+                from: paidby,
+                to: id,
+            })
+            if (!netamount) {
+                const newNetAmount = await NetAmount.create({
+                    from: paidby,
+                    to: id,
+                    netAmount: amount,
+                    grpNetAmount: [{
+                        group: group_id,
+                        grpNetAmount: amount
+                    }],
+                    nonGroupAmount: 0
+                }).session(session)
+            } else {
+                const newNetAmount = await NetAmount.findById(netamount._id).session(session)
+                newNetAmount.netAmount += amount
+                const groupIndex = netamount.grpNetAmount.findIndex(group => group.group.toString() === group_id);
+                if (groupIndex === -1) {
+                    newNetAmount.grpNetAmount.push({
+                        group: group_id,
+                        groupNetAmount: amount
+                    });
+                } else {
+                    newNetAmount.grpNetAmount[groupIndex].groupNetAmount += amount;
+                }
+                const savedNetAmount = (await newNetAmount.save()).session(session);
+                if (!savedNetAmount) {
+                    await session.abortTransaction()
+                    session.endSession()
+                    throw new apiError(500, 'Error while adding to netExpense Model !!')
+                }
+            }
+        })
+        res.status(200).json(new apiResponse(200,'','Expense Added !!'))
+    } catch (error) {
+        await session.abortTransaction()
+        session.endSession()
+        throw new apiError(500,'Error occured while adding new expenses !!')
+    }
 
-export { createGroup,addMembertogroup,fetchUserGroup };
+})
+
+export { createGroup, addMembertogroup, fetchUserGroup };
