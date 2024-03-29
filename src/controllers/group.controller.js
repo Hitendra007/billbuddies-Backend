@@ -8,6 +8,7 @@ import { GroupExpense } from "../models/groupExpense.model.js";
 import { Friend } from '../models/friend.model.js'
 import { User } from "../models/user.model.js";
 import { NetAmount } from "../models/netAmount.model.js";
+
 const createGroup = asyncHandler(async (req, res) => {
     const { groupName, members } = req.body;
 
@@ -16,7 +17,7 @@ const createGroup = asyncHandler(async (req, res) => {
         throw new apiError(400, 'Please provide a group name and members.');
     }
     if (!Array.isArray(members) || members.length < 2) {
-        throw new apiError(400, 'At least 2 members are required. send array of members');
+        throw new apiError(400, 'At least 2 members are required. Send array of members');
     }
 
     // Create the group
@@ -32,16 +33,19 @@ const createGroup = asyncHandler(async (req, res) => {
     // Respond with success message and created group
     res.status(201).json(new apiResponse(201, group, 'Group created successfully.'));
 });
+
 const fetchUserGroup = asyncHandler(async (req, res) => {
-    const user_id = req?.user_id
+    const user_id = req?.user_id;
     const groups = await UserGroup.find({
         user: user_id
-    })
+    });
+
     if (!groups) {
-        throw new apiError(404, 'no groups found!!')
+        throw new apiError(404, 'No groups found!!');
     }
-    res.status(200).json(new apiResponse(200, groups, 'groups fetched!!'))
-})
+
+    res.status(200).json(new apiResponse(200, groups, 'Groups fetched!!'));
+});
 
 const addMembertogroup = asyncHandler(async (req, res) => {
     const { user_id, group_id } = req.body;
@@ -241,6 +245,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
         throw new apiError(500, 'Error occurred while adding new expenses');
     }
 });
+
 const fetchNetAmountYouGive = asyncHandler(async (req, res) => {
     const { to } = req.body;
     const user_id = req.user._id;
@@ -253,6 +258,7 @@ const fetchNetAmountYouGive = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new apiResponse(200, netAmount, 'Fetched successfully'));
 });
+
 const fetchNetAmountYouGot = asyncHandler(async (req, res) => {
     const { from } = req.body;
     const user_id = req.user._id;
@@ -266,5 +272,4 @@ const fetchNetAmountYouGot = asyncHandler(async (req, res) => {
     return res.status(200).json(new apiResponse(200, netAmount, 'Fetched successfully'));
 });
 
-
-export { createGroup, addMembertogroup, fetchUserGroup };
+export { createGroup, addMembertogroup, fetchUserGroup, addgroupExpense, fetchNetAmountYouGive, fetchNetAmountYouGot };
