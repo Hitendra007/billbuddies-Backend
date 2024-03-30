@@ -8,11 +8,10 @@ import { GroupExpense } from "../models/groupExpense.model.js";
 import { Friend } from '../models/friend.model.js'
 import { User } from "../models/user.model.js";
 import { NetAmount } from "../models/netAmount.model.js";
-
+import { UserGroup } from "../models/UserAndGroup.model.js";
 const createGroup = asyncHandler(async (req, res) => {
     const { groupName, members } = req.body;
 
-    // Validate request body
     if (!groupName || !members) {
         throw new apiError(400, 'Please provide a group name and members.');
     }
@@ -20,22 +19,49 @@ const createGroup = asyncHandler(async (req, res) => {
         throw new apiError(400, 'At least 2 members are required. Send array of members');
     }
 
-    // Create the group
     const group = await Group.create({
         groupName,
         members
     });
 
+    // If group creation fails, throw an error
     if (!group) {
         throw new apiError(500, 'Error in creating group.');
     }
 
-    // Respond with success message and created group
-    res.status(201).json(new apiResponse(201, group, 'Group created successfully.'));
+    // Initialize a flag to track if all user-group entries are created successfully
+    let success = true;
+
+    // Add each member to the UserGroup schema
+    for (const member of members) {
+        try {
+            await UserGroup.create({
+                user: member,
+                group: group._id
+            });
+        } catch (error) {
+            // If an error occurs while creating user-group entry, set success flag to false
+            success = false;
+            // Log the error or perform any necessary actions
+            console.error('Error occurred while creating user-group entry:', error.message);
+            // Rollback: Delete the created group and break out of the loop
+            await Group.findByIdAndDelete(group._id);
+            break;
+        }
+    }
+
+    if (success) {
+        // If all user-group entries are created successfully, respond with success message and created group
+        res.status(201).json(new apiResponse(201, group, 'Group created successfully.'));
+    } else {
+        // If any user-group entry creation fails, respond with an error message
+        throw new apiError(500, 'Error occurred while creating user-group entries.');
+    }
 });
 
+
 const fetchUserGroup = asyncHandler(async (req, res) => {
-    const user_id = req?.user_id;
+    const user_id = req?.user_id
     const groups = await UserGroup.find({
         user: user_id
     });
@@ -132,7 +158,15 @@ const addMembertogroup = asyncHandler(async (req, res) => {
                 throw new apiError(500, 'Error while adding initial expense for the new member !!');
             }
         }
-
+        const newEntry = await UserGroup.create({
+            group: group_id,
+            user: user_id
+        }).session(session)
+        if (!newEntry) {
+            await session.abortTransaction()
+            session.endSession()
+            throw new apiError(500, 'Error occured while creating entry into user-group schema')
+        }
         // Commit the transaction
         await session.commitTransaction();
 
