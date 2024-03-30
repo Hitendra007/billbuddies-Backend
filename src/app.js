@@ -16,8 +16,10 @@ app.use(cookieParser())
 import userRouter from './routes/user.routes.js'
 import friendRouter from './routes/friends.routes.js'
 import groupRouter from './routes/group.routes.js'
+import individualRouter from './routes/indivdual.routes.js'
 
-app.use('/api/v1/users',userRouter)
-app.use('/api/v1/friend/',friendRouter)
-app.use('/api/v1/group/',groupRouter)
-export {app}
+app.use('/api/v1/users', userRouter)
+app.use('/api/v1/friend/', friendRouter)
+app.use('/api/v1/group/', groupRouter)
+app.use('/api/v1/individual/',individualRouter)
+export { app }

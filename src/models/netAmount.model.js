@@ -10,6 +10,7 @@ const netAmountSchema = new mongoose.Schema({
     },
     netAmount: {
         type: Number,
+        default:0
     },
     grpNetAmount:
         [
@@ -25,7 +26,8 @@ const netAmountSchema = new mongoose.Schema({
             }
         ],
     nonGroupAmount: {
-        type: Number
+        type: Number,
+        default:0
     }
 
 }, { timestamps: true })

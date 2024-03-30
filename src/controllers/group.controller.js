@@ -60,10 +60,36 @@ const createGroup = asyncHandler(async (req, res) => {
 });
 
 
+// const fetchUserGroup = asyncHandler(async (req, res) => {
+//     const user_id = req?.user._id
+//     const groups = await UserGroup.find({
+//         user: user_id
+//     });
+
+//     if (!groups) {
+//         throw new apiError(404, 'No groups found!!');
+//     }
+
+//     res.status(200).json(new apiResponse(200, groups, 'Groups fetched!!'));
+// });
 const fetchUserGroup = asyncHandler(async (req, res) => {
-    const user_id = req?.user._id
-    const groups = await UserGroup.find({
+    const user_id = req?.user._id;
+
+    // Fetch group IDs associated with the user
+    const userGroups = await UserGroup.find({
         user: user_id
+    });
+
+    if (!userGroups) {
+        throw new apiError(404, 'No groups found!!');
+    }
+
+    // Extract group IDs from userGroups
+    const groupIds = userGroups.map(userGroup => userGroup.group);
+
+    // Fetch full details of each group using group IDs
+    const groups = await Group.find({
+        _id: { $in: groupIds }
     });
 
     if (!groups) {
