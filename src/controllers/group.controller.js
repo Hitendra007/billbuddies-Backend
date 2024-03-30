@@ -11,14 +11,14 @@ import { NetAmount } from "../models/netAmount.model.js";
 import { UserGroup } from "../models/UserAndGroup.model.js";
 const createGroup = asyncHandler(async (req, res) => {
     const { groupName, members } = req.body;
-
+    const user_id=req?.user._id
     if (!groupName || !members) {
         throw new apiError(400, 'Please provide a group name and members.');
     }
     if (!Array.isArray(members) || members.length < 2) {
         throw new apiError(400, 'At least 2 members are required. Send array of members');
     }
-
+    members.push(user_id)
     const group = await Group.create({
         groupName,
         members
@@ -61,7 +61,7 @@ const createGroup = asyncHandler(async (req, res) => {
 
 
 const fetchUserGroup = asyncHandler(async (req, res) => {
-    const user_id = req?.user_id
+    const user_id = req?.user._id
     const groups = await UserGroup.find({
         user: user_id
     });
