@@ -3,7 +3,8 @@ import { apiResponse } from "../utils/apiResponse.js";
 import { IndividualExpense } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
-import { NetAmount } from "../models/netAmount.model";
+import { NetAmount } from "../models/netAmount.model.js";
+import { Friend } from "../models/friend.model.js";
 
 const addIndividualExpense = asyncHandler(async (req, res) => {
     const { paid_by, paid_to, amount, description } = req.body
@@ -60,7 +61,25 @@ const addIndividualExpense = asyncHandler(async (req, res) => {
         throw new apiError(500, 'Error occured while adding new expense .Try again !!')
     }
 })
-
+const allExpenses = asyncHandler(async(req,res)=>{
+      const user_id = req?.user._id
+      const MoneyYouGet = await NetAmount.find({
+        from:user_id,
+      })
+      if(!MoneyYouGet)
+      {
+        throw new apiError(404,'no expense found')
+      }
+      const MoneyYouHaveToPay = await NetAmount.find({
+        to:user_id
+      })
+      if(!MoneyYouHaveToPay)
+      {
+        throw new apiError(404,'no expense found')
+      }
+      res.status(200).json(new apiResponse(200,{MoneyYouGet,MoneyYouHaveToPay},'All expenses Fetched !!'))
+})
 export {
-    addIndividualExpense
+    addIndividualExpense,
+    allExpenses
 }
