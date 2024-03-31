@@ -2,7 +2,6 @@ import { Group } from "../models/group.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { UserGroup } from "../models/UserAndGroup.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
 import { GroupExpense } from "../models/groupExpense.model.js";
 import { Friend } from '../models/friend.model.js'
