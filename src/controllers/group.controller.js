@@ -215,7 +215,7 @@ const addMembertogroup = asyncHandler(async (req, res) => {
 const addgroupExpense = asyncHandler(async (req, res) => {
     const { group_id, moneyToMembers, paidby, description } = req.body;
 
-    if (!group_id || !mongoose.isValidObjectId(group_id) || !moneyToMembers || !Array.isArray(moneyToMembers) || !description || !paidby || !mongoose.isValidObjectId(paidby)) {
+    if (!group_id || !mongoose.isValidObjectId(group_id) || !moneyToMembers || !description || !paidby || !mongoose.isValidObjectId(paidby)) {
         throw new apiError(401, 'Please provide valid group id, money to members array, and paid by user id');
     }
 
