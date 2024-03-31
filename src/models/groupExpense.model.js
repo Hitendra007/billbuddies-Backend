@@ -10,6 +10,10 @@ const groupExpenseSchema = new mongoose.Schema({
             ref: 'User'
         }
     ],
+    description:{
+        type:String,
+        required:true,
+      },
     group: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Group'

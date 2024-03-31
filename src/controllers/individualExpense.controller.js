@@ -6,8 +6,8 @@ import mongoose from "mongoose";
 import { NetAmount } from "../models/netAmount.model";
 
 const addIndividualExpense = asyncHandler(async (req, res) => {
-    const { paid_by, paid_to, amount } = req.body
-    if (!paid_by || !paid_to || !mongoose.isValidObjectId(paid_by) || !mongoose.isValidObjectId(paid_to) || !amount) {
+    const { paid_by, paid_to, amount, description } = req.body
+    if (!paid_by || !paid_to || !mongoose.isValidObjectId(paid_by) || !mongoose.isValidObjectId(paid_to) || !amount || !description) {
         throw new apiError(401, 'send user ids to add expense and amount !!')
     }
     const session = await mongoose.startSession()
@@ -16,7 +16,8 @@ const addIndividualExpense = asyncHandler(async (req, res) => {
         const newexpense = await IndividualExpense.create({
             from: paid_by,
             to: paid_to,
-            amount
+            amount,
+            description
         }).session(session)
         if (!newexpense) {
             session.abortTransaction()

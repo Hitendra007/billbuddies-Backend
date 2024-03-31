@@ -8,6 +8,10 @@ const indivialExpenseSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     },
+    description:{
+      type:String,
+      required:true,
+    },
     amount: {
         type: Number
     }
