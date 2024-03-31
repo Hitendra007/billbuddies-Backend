@@ -1,6 +1,6 @@
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
-import { IndividualExpense } from "../models/user.model.js";
+import { IndividualExpense } from "../models/individualExpense.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
 import { NetAmount } from "../models/netAmount.model.js";
