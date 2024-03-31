@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { User } from "../models/user.model.js";
 import { apiError } from '../utils/apiError.js'
 import { apiResponse } from "../utils/apiResponse.js";
@@ -276,8 +277,20 @@ const fetchUsers = asyncHandler(async (req, res) => {
     }
     res.status(200).json(new apiResponse(200, users, 'Users fetched !!'))
 })
-
+const getUserName = asyncHandler(async(req,res)=>{
+      const {id} = req.body
+      if(!id || !mongoose.isValidObjectId(id)){
+        throw apiError(401,'send correct userId')
+      }
+      const user = await User.findById(id)
+      if(!user)
+      {
+        throw new apiError(404,'user not found !!')
+      }
+      res.status(200).json(new apiResponse(200,user.username,'username fetched !!'))
+})
 export {
+    getUserName,
     RegisterUser,
     loginUser,
     getCurrentUser,

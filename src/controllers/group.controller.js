@@ -11,7 +11,7 @@ import { NetAmount } from "../models/netAmount.model.js";
 import { UserGroup } from "../models/UserAndGroup.model.js";
 const createGroup = asyncHandler(async (req, res) => {
     const { groupName, members } = req.body;
-    const user_id=req?.user._id
+    const user_id = req?.user._id
     if (!groupName || !members) {
         throw new apiError(400, 'Please provide a group name and members.');
     }
@@ -213,7 +213,7 @@ const addMembertogroup = asyncHandler(async (req, res) => {
 });
 
 const addgroupExpense = asyncHandler(async (req, res) => {
-    const { group_id, moneyToMembers, paidby ,description} = req.body;
+    const { group_id, moneyToMembers, paidby, description } = req.body;
 
     if (!group_id || !mongoose.isValidObjectId(group_id) || !moneyToMembers || !Array.isArray(moneyToMembers) || !description || !paidby || !mongoose.isValidObjectId(paidby)) {
         throw new apiError(401, 'Please provide valid group id, money to members array, and paid by user id');
@@ -333,4 +333,76 @@ const fetchNetAmountYouGot = asyncHandler(async (req, res) => {
     return res.status(200).json(new apiResponse(200, netAmount, 'Fetched successfully'));
 });
 
-export { createGroup, addMembertogroup, fetchUserGroup, addgroupExpense, fetchNetAmountYouGive, fetchNetAmountYouGot };
+const fetchgroupInfo = asyncHandler(async (req, res) => {
+    const { group_id } = req.body;
+    const user_id = req?.user._id;
+
+    // Validate group_id
+    if (!group_id || !mongoose.isValidObjectId(group_id)) {
+        throw new apiError(401, 'Please send groupId correctly !!');
+    }
+
+    // Find the group by ID
+    const group = await Group.findById(group_id);
+    if (!group) {
+        throw new apiError(400, 'No group found with this ID.');
+    }
+
+    // Find group expenses
+    const groupExpenses = await GroupExpense.find({ group: group_id });
+    if (!groupExpenses || groupExpenses.length === 0) {
+        throw new apiError(404, 'No group expenses found.');
+    }
+
+    // Filter members excluding the current user
+    const members = group.members.filter(mem => mem !== user_id);
+
+    // Find net amounts paid by the current user to other members
+    const paidbyme = await NetAmount.find({ from: user_id, to: { $in: members }, group: group_id });
+    if (!paidbyme) {
+        throw new apiError(500, 'Error occurred while fetching net amounts paid by the current user.');
+    }
+
+    // Find net amounts paid to the current user by other members
+    const paidtome = await NetAmount.find({ from: { $in: members }, to: user_id, group: group_id });
+    if (!paidtome) {
+        throw new apiError(500, 'Error occurred while fetching net amounts paid to the current user.');
+    }
+
+    // Calculate net amounts user gets and owes
+    const Iget = [];
+    const Ihavetogive = [];
+
+    members.forEach(member => {
+        let amtGet = 0;
+        let amtGive = 0;
+
+        paidbyme.forEach(payment => {
+            if (payment.to.toString() === member.toString()) {
+                amtGet += payment.amount;
+            }
+        });
+
+        paidtome.forEach(payment => {
+            if (payment.from.toString() === member.toString()) {
+                amtGive += payment.amount;
+            }
+        });
+
+        Iget.push({ amount: amtGet, from: member });
+        Ihavetogive.push({ amount: amtGive, from: member });
+    });
+
+    // Calculate net payment for each member
+    const netpay = members.map(member => {
+        const amountGet = Iget.find(item => item.from.toString() === member.toString())?.amount || 0;
+        const amountGive = Ihavetogive.find(item => item.from.toString() === member.toString())?.amount || 0;
+        return { member, net: amountGet - amountGive };
+    });
+
+    // Respond with the fetched data
+    res.status(200).json(new apiResponse(200, { group, groupExpenses, paidbyme, paidtome, Iget, Ihavetogive, netpay }, 'Group information fetched successfully.'));
+});
+
+
+export { createGroup, addMembertogroup, fetchUserGroup, addgroupExpense, fetchNetAmountYouGive, fetchNetAmountYouGot ,fetchgroupInfo};
