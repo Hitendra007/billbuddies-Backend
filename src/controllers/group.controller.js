@@ -287,7 +287,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
                     netAmount.grpNetAmount[groupIndex].groupNetAmount += amount;
                 }
 
-                const savedNetAmount = await netAmount.save().session(session);
+                const savedNetAmount = await NetAmount.save().session(session);
                 if (!savedNetAmount) {
                     await session.abortTransaction();
                     session.endSession();
@@ -404,4 +404,4 @@ const fetchgroupInfo = asyncHandler(async (req, res) => {
 });
 
 
-export { createGroup, addMembertogroup, fetchUserGroup, addgroupExpense, fetchNetAmountYouGive, fetchNetAmountYouGot ,fetchgroupInfo};
+export { createGroup, addMembertogroup, fetchUserGroup, addgroupExpense, fetchNetAmountYouGive, fetchNetAmountYouGot, fetchgroupInfo };
