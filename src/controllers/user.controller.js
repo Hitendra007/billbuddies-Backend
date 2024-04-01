@@ -277,19 +277,29 @@ const fetchUsers = asyncHandler(async (req, res) => {
     }
     res.status(200).json(new apiResponse(200, users, 'Users fetched !!'))
 })
-const getUserName = asyncHandler(async(req,res)=>{
-      const {id} = req.body
-      if(!id || !mongoose.isValidObjectId(id)){
-        throw apiError(401,'send correct userId')
-      }
-      const user = await User.findById(id)
-      if(!user)
-      {
-        throw new apiError(404,'user not found !!')
-      }
-      res.status(200).json(new apiResponse(200,user.username,'username fetched !!'))
+const getUserName = asyncHandler(async (req, res) => {
+    const { id } = req.body
+    if (!id || !mongoose.isValidObjectId(id)) {
+        throw apiError(401, 'send correct userId')
+    }
+    const user = await User.findById(id)
+    if (!user) {
+        throw new apiError(404, 'user not found !!')
+    }
+    res.status(200).json(new apiResponse(200, user.username, 'username fetched !!'))
 })
+const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find().select("-password -refreshToken -email -otp -otpExpiresAt");
+    
+    if (!users || users.length === 0) {
+        throw new apiError(404, 'No users found.');
+    }
+
+    res.status(200).json(new apiResponse(200, users, 'Users fetched successfully.'));
+});
+
 export {
+    getAllUsers,
     getUserName,
     RegisterUser,
     loginUser,
