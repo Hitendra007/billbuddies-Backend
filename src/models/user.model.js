@@ -1,13 +1,10 @@
 import mongoose from "mongoose";
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
 
-// Define the user schema
 const userSchema = new mongoose.Schema({
-    username:{
-        type:String,
-        required:true,
-        trim:true,
+    username: {
+        type: String,
+        required: true,
+        trim: true,
     },
     email: {
         type: String,
@@ -79,6 +76,9 @@ userSchema.methods.generateRefreshToken = function () {
         }
     );
 };
+
+// Ensure that the model supports sessions
+userSchema.set('session', { session: null });
 
 // Create the User model
 export const User = mongoose.model('User', userSchema);

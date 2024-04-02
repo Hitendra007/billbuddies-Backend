@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const indivialExpenseSchema = new mongoose.Schema({
     from: {
         type: mongoose.Schema.Types.ObjectId,
@@ -9,11 +10,15 @@ const indivialExpenseSchema = new mongoose.Schema({
         ref: 'User',
     },
     description:{
-      type:String,
-      required:true,
+        type:String,
+        required:true,
     },
     amount: {
         type: Number
     }
-}, { timestamps: true })
-export const IndividualExpense = mongoose.model('IndividualExpense', indivialExpenseSchema)
+}, { timestamps: true });
+
+// Ensure that the model supports sessions
+indivialExpenseSchema.set('session', { session: null });
+
+export const IndividualExpense = mongoose.model('IndividualExpense', indivialExpenseSchema);

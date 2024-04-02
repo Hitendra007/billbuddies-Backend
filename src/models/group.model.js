@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const groupSchema = new mongoose.Schema({
     groupName: {
         type: String,
@@ -11,5 +12,9 @@ const groupSchema = new mongoose.Schema({
             required:true,
         }
     ]
-}, { timestamps: true })
-export const Group = mongoose.model('Group', groupSchema)
+}, { timestamps: true });
+
+// Ensure that the model supports sessions
+groupSchema.set('session', { session: null });
+
+export const Group = mongoose.model('Group', groupSchema);

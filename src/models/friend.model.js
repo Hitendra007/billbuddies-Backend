@@ -13,4 +13,7 @@ const friendSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// Ensure that the model supports sessions
+friendSchema.set('session', { session: null });
+
 export const Friend = mongoose.model('Friend', friendSchema);
