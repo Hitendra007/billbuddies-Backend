@@ -110,28 +110,24 @@ const addMembertogroup = asyncHandler(async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
-    // Find the group
-    const group = await Group.findById(group_id).session(session);
-    if (!group) {
-        await session.abortTransaction();
-        session.endSession();
-        throw new apiError(404, 'No group found with this id');
-    }
-
-    // Find the user
-    const user = await User.findById(user_id).session(session);
-    if (!user) {
-        await session.abortTransaction();
-        session.endSession();
-        throw new apiError(404, 'User not found !!');
-    }
-
     try {
+        // Find the group
+        const group = await Group.findById(group_id);
+        if (!group) {
+            throw new apiError(404, 'No group found with this id');
+        }
+
+        // Find the user
+        const user = await User.findById(user_id);
+        if (!user) {
+            throw new apiError(404, 'User not found !!');
+        }
+
         // Get the current members of the group
         const members = group.members;
 
         // Find all friendships involving the user
-        const friendships = await Friend.find({ $or: [{ user1: user_id }, { user2: user_id }] }).session(session);
+        const friendships = await Friend.find({ $or: [{ user1: user_id }, { user2: user_id }] });
 
         // Extract the friend IDs
         const friendIds = friendships.flatMap(friendship => {
@@ -143,55 +139,50 @@ const addMembertogroup = asyncHandler(async (req, res) => {
 
         // Add non-friends as friends
         for (const nonfriend of nonfriends) {
-            const newFriend = await Friend.create({
+            const newFriend = await Friend.create([{
                 user1: user_id,
                 user2: nonfriend
-            }).session(session);
+            }], { session: session });
             if (!newFriend) {
-                await session.abortTransaction();
-                session.endSession();
                 throw new apiError(500, 'Unable to add friend in group membership!!');
             }
         }
 
         // Update group members
         const newMembers = [...members, user_id];
-        const newMemberadded = await Group.findByIdAndUpdate(group_id, { members: newMembers }, { new: true }).session(session);
+        const newMemberadded = await Group.findByIdAndUpdate(group_id, { members: newMembers }, { new: true, session: session });
         if (!newMemberadded) {
-            await session.abortTransaction();
-            session.endSession();
             throw new apiError(500, 'Problem in adding a new member to group !!');
         }
 
         // Create group expenses
         for (const mem of newMembers) {
-            const grpExpFromNewToOldMembers = await GroupExpense.create({
+            const grpExpFromNewToOldMembers = await GroupExpense.create([{
                 from: user_id,
                 to: mem,
                 group: group_id,
                 amount: 0
-            }).session(session);
-            const grpExpFromOldToNewMemeber = await GroupExpense.create({
+            }], { session: session });
+            const grpExpFromOldToNewMemeber = await GroupExpense.create([{
                 from: mem,
                 to: user_id,
                 group: group_id,
                 amount: 0
-            }).session(session);
+            }], { session: session });
             if (!grpExpFromNewToOldMembers || !grpExpFromOldToNewMemeber) {
-                await session.abortTransaction();
-                session.endSession();
                 throw new apiError(500, 'Error while adding initial expense for the new member !!');
             }
         }
-        const newEntry = await UserGroup.create({
+
+        // Create entry in UserGroup schema
+        const newEntry = await UserGroup.create([{
             group: group_id,
             user: user_id
-        }).session(session)
+        }], { session: session });
         if (!newEntry) {
-            await session.abortTransaction()
-            session.endSession()
-            throw new apiError(500, 'Error occured while creating entry into user-group schema')
+            throw new apiError(500, 'Error occured while creating entry into user-group schema');
         }
+
         // Commit the transaction
         await session.commitTransaction();
 
@@ -207,9 +198,10 @@ const addMembertogroup = asyncHandler(async (req, res) => {
         session.endSession();
 
         // Forward the error to the error handling middleware
-        throw new apiError(500, 'Failed !!')
+        throw new apiError(500, 'Failed !!');
     }
 });
+
 
 const addgroupExpense = asyncHandler(async (req, res) => {
     const { group_id, moneyToMembers, paidby, description } = req.body;
@@ -225,46 +217,40 @@ const addgroupExpense = asyncHandler(async (req, res) => {
 
     session.startTransaction();
 
-    const group = await Group.findById(group_id).session(session);
-    if (!group) {
-        await session.abortTransaction();
-        session.endSession();
-        throw new apiError(404, 'No group found with this id');
-    }
-
-    const paidByUser = await User.findById(paidby).session(session);
-    if (!paidByUser) {
-        await session.abortTransaction();
-        session.endSession();
-        throw new apiError(404, 'No user found for the payer');
-    }
-
     try {
+        const group = await Group.findById(group_id).session(session);
+        if (!group) {
+            throw new apiError(404, 'No group found with this id');
+        }
+
+        const paidByUser = await User.findById(paidby).session(session);
+        if (!paidByUser) {
+            throw new apiError(404, 'No user found for the payer');
+        }
+
         for (const mem of moneyToMembers) {
             const id = mem._id;
             const amount = mem.amount;
 
-            const newEntry = await GroupExpense.create({
+            const newEntry = await GroupExpense.create([{
                 from: paidby,
                 to: id,
                 group: group_id,
                 description,
                 amount
-            }).session(session);
+            }], { session: session });
 
             if (!newEntry) {
-                await session.abortTransaction();
-                session.endSession();
                 throw new apiError(500, 'Error occurred while adding expense');
             }
 
             let netAmount = await NetAmount.findOne({
                 from: paidby,
                 to: id,
-            });
+            }).session(session);
 
             if (!netAmount) {
-                netAmount = await NetAmount.create({
+                netAmount = await NetAmount.create([{
                     from: paidby,
                     to: id,
                     netAmount: amount,
@@ -273,7 +259,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
                         groupNetAmount: amount
                     }],
                     nonGroupAmount: 0
-                }).session(session);
+                }], { session: session });
             } else {
                 netAmount.netAmount += amount;
 
@@ -287,10 +273,8 @@ const addgroupExpense = asyncHandler(async (req, res) => {
                     netAmount.grpNetAmount[groupIndex].groupNetAmount += amount;
                 }
 
-                const savedNetAmount = await NetAmount.save().session(session);
+                const savedNetAmount = await netAmount.save({ session: session });
                 if (!savedNetAmount) {
-                    await session.abortTransaction();
-                    session.endSession();
                     throw new apiError(500, 'Error occurred while saving net expense');
                 }
             }
@@ -305,6 +289,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
         throw new apiError(500, `Error occurred while adding new expenses -- ${error?.message}`);
     }
 });
+
 
 const fetchNetAmountYouGive = asyncHandler(async (req, res) => {
     const { to } = req.body;
@@ -349,7 +334,7 @@ const fetchgroupInfo = asyncHandler(async (req, res) => {
 
     // Find group expenses
     const groupExpenses = await GroupExpense.find({ group: group_id });
-    if (!groupExpenses || groupExpenses.length === 0) {
+    if (!groupExpenses) {
         throw new apiError(404, 'No group expenses found.');
     }
 
