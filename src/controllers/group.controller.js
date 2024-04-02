@@ -302,7 +302,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
-        throw new apiError(500, 'Error occurred while adding new expenses');
+        throw new apiError(500, `Error occurred while adding new expenses -- ${error?.message}`);
     }
 });
 
