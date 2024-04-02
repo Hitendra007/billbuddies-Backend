@@ -9,8 +9,8 @@ router.post('/create-group', verifyJWT, createGroup);
 router.post('/add-to-group', verifyJWT, addMembertogroup);
 router.post('/fetch-user-group', verifyJWT, fetchUserGroup);
 router.post('/add-group-expense', verifyJWT, addgroupExpense);
-router.get('/fetch-net-amount-you-give', verifyJWT, fetchNetAmountYouGive);
-router.get('/fetch-net-amount-you-got', verifyJWT, fetchNetAmountYouGot);
-router.get('/fetch-group-info',verifyJWT,fetchgroupInfo)
+router.post('/fetch-net-amount-you-give', verifyJWT, fetchNetAmountYouGive);
+router.post('/fetch-net-amount-you-got', verifyJWT, fetchNetAmountYouGot);
+router.post('/fetch-group-info',verifyJWT,fetchgroupInfo)
 
 export default router;
