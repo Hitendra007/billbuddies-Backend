@@ -339,16 +339,16 @@ const fetchgroupInfo = asyncHandler(async (req, res) => {
     }
 
     // Filter members excluding the current user
-    const members = group.members.filter(mem => mem !== user_id);
+    const members = group.members.filter(mem => mem.toString() !== user_id.toString());
 
     // Find net amounts paid by the current user to other members
-    const paidbyme = await NetAmount.find({ from: user_id, to: { $in: members }, group: group_id });
+    const paidbyme = await NetAmount.find({ from: user_id, to: { $in: members }, 'grpNetAmount.group': group_id });
     if (!paidbyme) {
         throw new apiError(500, 'Error occurred while fetching net amounts paid by the current user.');
     }
 
     // Find net amounts paid to the current user by other members
-    const paidtome = await NetAmount.find({ from: { $in: members }, to: user_id, group: group_id });
+    const paidtome = await NetAmount.find({ from: { $in: members }, to: user_id, 'grpNetAmount.group': group_id });
     if (!paidtome) {
         throw new apiError(500, 'Error occurred while fetching net amounts paid to the current user.');
     }
@@ -363,18 +363,19 @@ const fetchgroupInfo = asyncHandler(async (req, res) => {
 
         paidbyme.forEach(payment => {
             if (payment.to.toString() === member.toString()) {
-                amtGet += payment.amount;
+                console.log(payment)
+                amtGet += payment.netAmount;
             }
         });
 
         paidtome.forEach(payment => {
             if (payment.from.toString() === member.toString()) {
-                amtGive += payment.amount;
+                amtGive += payment.netAmount;
             }
         });
 
-        Iget.push({ amount: amtGet, from: member });
-        Ihavetogive.push({ amount: amtGive, from: member });
+        Iget.push({ amount: amtGet || 0, from: member });
+        Ihavetogive.push({ amount: amtGive || 0, from: member });
     });
 
     // Calculate net payment for each member
@@ -387,6 +388,7 @@ const fetchgroupInfo = asyncHandler(async (req, res) => {
     // Respond with the fetched data
     res.status(200).json(new apiResponse(200, { group, groupExpenses, paidbyme, paidtome, Iget, Ihavetogive, netpay }, 'Group information fetched successfully.'));
 });
+
 
 
 export { createGroup, addMembertogroup, fetchUserGroup, addgroupExpense, fetchNetAmountYouGive, fetchNetAmountYouGot, fetchgroupInfo };
