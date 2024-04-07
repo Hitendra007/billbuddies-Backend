@@ -210,7 +210,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
     if (!group_id || !mongoose.isValidObjectId(group_id) || !moneyToMembers || !description || !paidby || !mongoose.isValidObjectId(paidby)) {
         throw new apiError(401, 'Please provide valid group id, money to members array, and paid by user id');
     }
-    const nanoId=nanoid()
+    const nanoId = nanoid()
     const session = await mongoose.startSession();
     if (!session) {
         throw new apiError(401, 'Failed to start session for transaction');
