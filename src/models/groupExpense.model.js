@@ -10,6 +10,10 @@ const groupExpenseSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
+    nanoId:{
+        type:String,
+        required:true
+    },
     description: {
         type: String,
         required: true

@@ -8,6 +8,7 @@ import { Friend } from '../models/friend.model.js'
 import { User } from "../models/user.model.js";
 import { NetAmount } from "../models/netAmount.model.js";
 import { UserGroup } from "../models/UserAndGroup.model.js";
+import { nanoid } from "nanoid";
 const createGroup = asyncHandler(async (req, res) => {
     const { groupName, members } = req.body;
     const user_id = req?.user._id
@@ -209,7 +210,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
     if (!group_id || !mongoose.isValidObjectId(group_id) || !moneyToMembers || !description || !paidby || !mongoose.isValidObjectId(paidby)) {
         throw new apiError(401, 'Please provide valid group id, money to members array, and paid by user id');
     }
-
+    const nanoId=nanoid()
     const session = await mongoose.startSession();
     if (!session) {
         throw new apiError(401, 'Failed to start session for transaction');
@@ -236,6 +237,7 @@ const addgroupExpense = asyncHandler(async (req, res) => {
                 from: paidby,
                 to: id,
                 group: group_id,
+                nanoId,
                 description,
                 amount
             }], { session: session });
